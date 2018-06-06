@@ -1,15 +1,16 @@
 
 from WorldGenerator import *
+from MapImager import printMapGrid, buildMapImage
 
 
-MACHINE_SPIRIT = "=---<011>---="
+MACHINE_SPIRIT = "=---<011>---=hhty"
 
 
 def main():
     gen = WorldGenerator()
-    world = gen.generateWorld("Test World", seed = MACHINE_SPIRIT)
+    world = gen.generateWorld("TestWorld", seed = MACHINE_SPIRIT)
+    buildMapImage(world, "MapImages/Map_%s.png" % world.name)
     world.printWorld()
-
 
 
 

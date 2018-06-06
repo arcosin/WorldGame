@@ -8,6 +8,7 @@ class WorldGraph:
     def __init__(self, name):
         self.name=name
         self.idCounter = 0
+        self.chunkCounter = 1
         self.nodes = []
         self.coords = CoordMap()
 
@@ -16,14 +17,18 @@ class WorldGraph:
         self.idCounter += 1
         return ret
 
+    def getNextChunkID(self):
+        ret = self.chunkCounter
+        self.chunkCounter += 1
+        return ret
+
     def addNode(self, node, coord = None):
         node.finished = True
         if coord != None:   self.coords.setCoord(coord, node)
         self.nodes.append(node)
 
-
     def printWorld(self):
-        for n in self.nodes:   print("%s\n" % n)
+        for n in self.nodes:   print("%s\n" % str(n))
 
 
 
@@ -57,11 +62,12 @@ class GraphNode(object):
         - A list of adjacent locations
 '''
 class Location(GraphNode):
-    def __init__(self, id, worldmap, enviroment, adjacent = [], items = [], events = []):
+    def __init__(self, id, worldmap, enviroment, adjacent = []):
         super().__init__(id, adjacent)
         self.worldmap = worldmap
-        self.items = items
-        self.events = events
+        self.items = []
+        self.events = []
+        self.chunkID = -1     #Optional field to store a locations "chunk" or grouping. -1 = unset.
         self.enviroment = enviroment
         self.finished = False
 
@@ -72,6 +78,22 @@ class Location(GraphNode):
     def getItems(self):   return list(self.items)
 
     def getEvents(self):   return list(self.events)
+
+    def setItems(self, items):   self.items = items
+
+    def setEvents(self, events):   self.events = events
+
+    def addItem(self, item):   self.items.append(item)
+
+    def addEvent(self, event):   self.events.append(event)
+
+    def delItem(self, i):   del self.items[i]
+
+    def delEvent(self, i):   del self.events[i]
+
+    def setChunkID(self, id):   self.chunkID = id
+
+    def getChunkID(self):   return self.chunkID
 
     def getEnviroment(self):   return self.enviroment
 
@@ -87,8 +109,8 @@ class Location(GraphNode):
     If an adjacency is unset, it will be generated on upon request.
 '''
 class OctagonalLocation(Location):
-    def __init__(self, id, worldmap, enviroment, generator, coord, adjacent = [], items = [], events = []):
-        super().__init__(id, worldmap, enviroment, adjacent, items, events)
+    def __init__(self, id, worldmap, enviroment, generator, coord, adjacent = []):
+        super().__init__(id, worldmap, enviroment, adjacent)
         self.gen = generator
         self.coord = coord
 
@@ -107,7 +129,7 @@ class OctagonalLocation(Location):
     def getWorldCoord(self):   return self.coord
 
     def __repr__(self):
-        return "OctagonalLocation: {id:%d, env:%s, coord:%s}" % (self.id, str(self.enviroment), str(self.coord))
+        return "OctagonalLocation: {id:%d, coord:%s, chunkID:%d, env:%s}" % (self.id, str(self.coord), self.chunkID, str(self.enviroment))
 
 
 
@@ -118,8 +140,8 @@ class OctagonalLocation(Location):
     Coordinate is reconed using this root location.
 '''
 class PathedLocation(Location):
-    def __init__(self, id, worldmap, enviroment, rootLocationID, adjacent = [], items = [], events = []):
-        super().__init__(id, worldmap, enviroment, adjacent, items, events)
+    def __init__(self, id, worldmap, enviroment, rootLocationID, adjacent = []):
+        super().__init__(id, worldmap, enviroment, adjacent)
         self.root = rootLocationID
 
     def getAdjactentLocations(self):
@@ -132,7 +154,7 @@ class PathedLocation(Location):
         return rootLocation.getWorldCoord()
 
     def __repr__(self):
-        return "PathedLocation: {id:%d, env:%s, rootID:%d}" % (self.id, str(self.enviroment), self.rootLocationID)
+        return "PathedLocation: {id:%d, rootID:%d, chunkID:%d, env:%s}" % (self.id, self.rootLocationID, self.chunkID, str(self.enviroment))
 
 
 

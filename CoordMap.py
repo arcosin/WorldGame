@@ -1,6 +1,7 @@
 
 from collections import defaultdict
 
+
 '''
     Builds a coordinate ring in the form of a list.
     In order of w, nw, n, ne, e, se, s, sw.
@@ -44,6 +45,12 @@ class CoordMap:
                 return self.coords[x][y]
         return None
 
+    def numCoords(self):
+        num = 0
+        k = self.coords.keys()
+        for x in k:   num = num + len(self.coords[x])
+        return num
+
     def getNeighbors(self, coord):
         if len(coord) != 2:   raise ValueError("Coord must have dimmension of 2.")
         ns = []
@@ -52,6 +59,22 @@ class CoordMap:
             n = self.getCoord(ringCoords[i])
             ns.append(n)
         return ns
+
+    def getFarthestCoords(self):
+        return (self.westestPoint, self.northestPoint, self.eastestPoint, self.southestPoint)
+
+    def buildListGrid(self):
+        width = 1 + self.eastestPoint[0] - self.westestPoint[0]
+        length = 1 + self.northestPoint[1] - self.southestPoint[1]
+        listOrigin = (self.eastestPoint[0], self.northestPoint[1])
+        grid = []
+        for y in range(length):
+            grid.append(list())
+            for x in range(width):
+                node = self.getCoord((listOrigin[0] - x, listOrigin[1] - y))
+                grid[y].append(node)
+        return grid
+
 
 
 #===============================================================================

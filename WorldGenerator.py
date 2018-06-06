@@ -6,6 +6,7 @@ from Event import *
 from LocationEnviroment import LocationEnviroment
 from Biomes import BIOME_DEFINITIONS, BIOMES, BIOME_TRANSFORMS
 from CoordMap import CoordMap, coordRing
+from MapImager import buildMapImage
 
 
 
@@ -24,10 +25,15 @@ class WorldGenerator:
         self.worldName = name
         start = self.generateStartingPoint(world)
         w, nw, n, ne, e, se, s, sw = self.generateDefaultStartingRing(world)
+        buildMapImage(world, "MapImages/Map_%s_t0.png" % world.name)
         self.generateOn(world, nw)
+        buildMapImage(world, "MapImages/Map_%s_t1.png" % world.name)
         self.generateOn(world, ne)
+        buildMapImage(world, "MapImages/Map_%s_t2.png" % world.name)
         self.generateOn(world, se)
+        buildMapImage(world, "MapImages/Map_%s_t3.png" % world.name)
         self.generateOn(world, sw)
+        buildMapImage(world, "MapImages/Map_%s_t4.png" % world.name)
         return world
 
 
@@ -42,8 +48,7 @@ class WorldGenerator:
         ringCoords = coordRing(node.coord)
         for i in range(8):
             if neighbors[i] == None:   #check that space is vacent.
-                chunk = self.generateRandomChunk(world, ringCoords[i], node)   #Generate a new chunk.
-                for loc in chunk:   world.addNode(loc, loc.coord)   #Add the generated chunk to the world.
+                self.generateRandomChunk(world, ringCoords[i], node)   #Generate and add a new chunk.
                 neighbors = world.coords.getNeighbors(node.coord)   #Recalculate neighbors.
 
 
@@ -59,9 +64,8 @@ class WorldGenerator:
         envDesc = BIOME_DEFINITIONS[bio][1]
         env = LocationEnviroment(bio, envName, envDesc)
         adj = []
-        villageItems = []
-        villageEvents = []
-        start = OctagonalLocation(id, world, env, self, (0, 0), adj, villageItems, villageEvents)
+        start = OctagonalLocation(id, world, env, self, (0, 0), adj)
+        start.setChunkID(0)
         world.addNode(start, (0, 0))
         return start
 
@@ -80,10 +84,9 @@ class WorldGenerator:
             envName = BIOME_DEFINITIONS[bio][0]
             envDesc = BIOME_DEFINITIONS[bio][1]
             env = LocationEnviroment(bio, envName, envDesc)
-            items = []
-            events = []
             adj = []
-            ring[i] = OctagonalLocation(id, world, env, self, ringCoords[i], adj, items, events)
+            ring[i] = OctagonalLocation(id, world, env, self, ringCoords[i], adj)
+            ring[i].setChunkID(0)
             world.addNode(ring[i], ringCoords[i])
         return ring
 
@@ -97,26 +100,25 @@ class WorldGenerator:
             maxExp -- maximum number of locations grown from the start coord.
         Checks if it should be a special chunk.
         If not special, decides the generated biome.
-        Next, generates the locations.
+        Next, generates the locations and adds them to the world.
         Returns a list of locations to be added.
     '''
     def generateRandomChunk(self, world, rootCoord, rootNode = None):
         neighbors = world.coords.getNeighbors(rootCoord)
+        chunkID = world.getNextChunkID()
         #TODO: add special chunks.
         rootBiome = rootNode.getEnviroment().biome
         biome = random.choice(BIOME_TRANSFORMS[rootBiome])
         coordSet = self.recursiveRandomGridBuild(world, rootCoord)   #Generate structure of the chunk.
-        chunk = []
         for coord in coordSet:   #Add OctagonalLocation on each coord in chunk.
             id = world.getNextNodeID()
             envName = BIOME_DEFINITIONS[biome][0]
             envDesc = BIOME_DEFINITIONS[biome][1]
-            items = []
-            events = []
             adj = []
             env = LocationEnviroment(biome, envName, envDesc)
-            chunk.append(OctagonalLocation(id, world, env, self, coord, adj, items, events))
-        return chunk
+            loc = OctagonalLocation(id, world, env, self, coord, adj)
+            loc.setChunkID(chunkID)
+            world.addNode(loc, coord)
 
 
     '''
