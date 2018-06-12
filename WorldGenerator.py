@@ -1,17 +1,19 @@
 
-import random
 from WorldGraph import *
 from Item import *
 from Event import *
 from LocationEnviroment import LocationEnviroment
-from Biomes import BIOME_DEFINITIONS, BIOMES, BIOME_TRANSFORMS
+from Biomes import BIOME_DEFINITIONS, BIOME_TRANSFORMS, buildBiomeFreqList
 from CoordMap import CoordMap, coordRing
 from MapImager import buildMapImage
+from numpy.random import RandomState
 
 
 
 
 class WorldGenerator:
+
+    temp_count = 1
 
     '''
         Generates a populated WorldGraph.
@@ -20,20 +22,15 @@ class WorldGenerator:
             seed -- RNG seed used to generate the world. string or int.
     '''
     def generateWorld(self, name, seed = None):
-        random.seed(seed)
-        world = WorldGraph(name)
+        world = WorldGraph(name, rng = RandomState(seed=seed))
         self.worldName = name
         start = self.generateStartingPoint(world)
         w, nw, n, ne, e, se, s, sw = self.generateDefaultStartingRing(world)
         buildMapImage(world, "MapImages/Map_%s_t0.png" % world.name)
         self.generateOn(world, nw)
-        buildMapImage(world, "MapImages/Map_%s_t1.png" % world.name)
         self.generateOn(world, ne)
-        buildMapImage(world, "MapImages/Map_%s_t2.png" % world.name)
         self.generateOn(world, se)
-        buildMapImage(world, "MapImages/Map_%s_t3.png" % world.name)
         self.generateOn(world, sw)
-        buildMapImage(world, "MapImages/Map_%s_t4.png" % world.name)
         return world
 
 
@@ -50,6 +47,8 @@ class WorldGenerator:
             if neighbors[i] == None:   #check that space is vacent.
                 self.generateRandomChunk(world, ringCoords[i], node)   #Generate and add a new chunk.
                 neighbors = world.coords.getNeighbors(node.coord)   #Recalculate neighbors.
+        buildMapImage(world, "MapImages/Map_%s_t%d.png" % (world.name, WorldGenerator.temp_count))
+        WorldGenerator.temp_count = WorldGenerator.temp_count + 1
 
 
     '''
@@ -108,7 +107,8 @@ class WorldGenerator:
         chunkID = world.getNextChunkID()
         #TODO: add special chunks.
         rootBiome = rootNode.getEnviroment().biome
-        biome = random.choice(BIOME_TRANSFORMS[rootBiome])
+        biomeTrans = BIOME_TRANSFORMS[rootBiome]
+        biome = world.rng.choice(biomeTrans, p = buildBiomeFreqList(biomeTrans))
         coordSet = self.recursiveRandomGridBuild(world, rootCoord)   #Generate structure of the chunk.
         for coord in coordSet:   #Add OctagonalLocation on each coord in chunk.
             id = world.getNextNodeID()
@@ -130,14 +130,14 @@ class WorldGenerator:
             probInc -- amount to increment probStop each generation.
         Returns a set of coordinates (x, y) to build on.
     '''
-    def recursiveRandomGridBuild(self, world, rootCoord, probStop = 0.4, probInc = 0.1):
+    def recursiveRandomGridBuild(self, world, rootCoord, probStop = 0.4, probInc = 0.15):
         neighbors = world.coords.getNeighbors(rootCoord)
         ringCoords = coordRing(rootCoord)
         addedCoords = set()
         recCoords = {rootCoord}
         for i in range(len(neighbors)):
             if neighbors[i] == None:
-                stop = random.random() < probStop
+                stop = world.rng.random_sample() < probStop
                 if not stop:   addedCoords.add(ringCoords[i])
         for coord in addedCoords:
             rec = self.recursiveRandomGridBuild(world, coord, probStop = probStop + probInc, probInc = probInc)

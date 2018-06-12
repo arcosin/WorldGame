@@ -68,11 +68,11 @@ class CoordMap:
         length = 1 + self.northestPoint[1] - self.southestPoint[1]
         listOrigin = (self.eastestPoint[0], self.northestPoint[1])
         grid = []
-        for y in range(length):
+        for y in range(width):
             grid.append(list())
-            for x in range(width):
-                node = self.getCoord((listOrigin[0] - x, listOrigin[1] - y))
-                grid[y].append(node)
+            for x in range(length):
+                node = self.getCoord((listOrigin[1] - y, listOrigin[0] - x))
+                grid[y].insert(0, node)
         return grid
 
 
